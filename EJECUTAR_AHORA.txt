@@ -1,0 +1,48 @@
+========================================
+SOLUCIÓN AL PROBLEMA DEL FEED
+========================================
+
+El feed no funcionaba porque las políticas RLS (Row Level Security) de Supabase
+no estaban configuradas correctamente.
+
+INSTRUCCIONES (5 MINUTOS):
+
+1. Abre https://app.supabase.com
+2. Selecciona proyecto "charlas"
+3. Ve a SQL EDITOR (menú lateral izquierdo)
+4. Haz click "New Query" (arriba a la derecha)
+5. Copia TODO el contenido del archivo "fix-rls.sql" ← ESTE ES LA CLAVE
+6. Pégalo en el editor SQL
+7. Haz click en "Run" (botón abajo a la derecha)
+8. Espera a que diga "Success!" (unos 10 segundos)
+
+DESPUÉS:
+
+- Borra los usuarios de prueba (Authentication > Users > eliminar)
+- Regístrate de nuevo en http://localhost:3001
+- ¡Ahora sí puedes crear posts!
+
+========================================
+QUÉ ARREGLÉ EN EL CÓDIGO
+========================================
+
+PROBLEMA:
+- auth.uid() es la UUID de auth.users
+- posts.user_id es la UUID de users.id (tabla propia)
+- Las viejas políticas comparaban directamente ❌
+
+SOLUCIÓN:
+- Nueva función get_current_user_id() que traduce correctamente
+- Políticas actualizadas que usan esa función
+- Frontend ahora obtiene el usuario correcto de la tabla users
+
+ARCHIVOS MODIFICADOS:
+✓ src/lib/db.ts - Agregada función getUserByAuthId()
+✓ src/app/dashboard/page.tsx - Usa el usuario correcto
+✓ fix-rls.sql - Nuevas políticas RLS + función helper
+
+COMMITS:
+✓ 5d31dc9: Fix user ID mismatch
+✓ 1c3b4b7: Add comprehensive RLS fix
+
+Todo está en GitHub. Solo falta ejecutar el SQL en Supabase.
