@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { signOut, getUser, getCurrentSession } from '@/lib/auth'
-import { getPosts, createPost, likePost, unlikePost, hasUserLikedPost, getUserFriends, getConversation, sendMessage } from '@/lib/db'
+import { getPosts, createPost, likePost, unlikePost, hasUserLikedPost, getUserFriends, getConversation, sendMessage, getUserByAuthId } from '@/lib/db'
 
 interface Post {
   id: string
@@ -37,11 +37,17 @@ export default function Dashboard() {
         const { data: userData } = await getUser()
         
         if (userData?.user) {
-          setCurrentUser(userData.user)
-          const { data: postsData } = await getPosts(20)
-          setPosts(postsData || [])
-          const { data: friendsData } = await getUserFriends(userData.user.id)
-          setFriends(friendsData || [])
+          // Obtener el usuario de la tabla 'users' usando auth_id
+          const { data: userProfile } = await getUserByAuthId(userData.user.id)
+          if (userProfile) {
+            setCurrentUser(userProfile)
+            const { data: postsData } = await getPosts(20)
+            setPosts(postsData || [])
+            const { data: friendsData } = await getUserFriends(userProfile.id)
+            setFriends(friendsData || [])
+          } else {
+            console.error('User profile not found')
+          }
         } else if (!sessionData?.session) {
           // No hay sesión, redirigir al login
           window.location.href = '/'

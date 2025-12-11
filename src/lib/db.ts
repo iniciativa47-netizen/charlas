@@ -3,6 +3,15 @@ import { supabase } from './supabase'
 // ============================================
 // USERS
 // ============================================
+export async function getUserByAuthId(authId: string) {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('auth_id', authId)
+    .single()
+  return { data, error }
+}
+
 export async function getUserProfile(userId: string) {
   const { data, error } = await supabase
     .from('users')

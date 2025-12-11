@@ -30,9 +30,18 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Crear trigger que ejecuta la función
-CREATE OR REPLACE TRIGGER on_auth_user_created
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ============================================
+-- CREAR FUNCIÓN HELPER PARA OBTENER USER_ID
+-- ============================================
+CREATE OR REPLACE FUNCTION public.get_current_user_id()
+RETURNS UUID AS $$
+SELECT id FROM public.users WHERE auth_id = auth.uid()
+$$ LANGUAGE sql STABLE;
 
 -- ============================================
 -- ACTUALIZAR POLÍTICAS RLS PARA PERMITIR INSERT
@@ -41,6 +50,7 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
 -- Eliminar las políticas antiguas
 DROP POLICY IF EXISTS "Users can insert their own profile" ON users;
 DROP POLICY IF EXISTS "Users can update their own profile" ON users;
+DROP POLICY IF EXISTS "Users can view all profiles" ON users;
 
 -- Nueva política que permite insert a usuarios autenticados
 CREATE POLICY "Users can insert their own profile"
@@ -53,10 +63,7 @@ ON users FOR UPDATE
 USING (auth.uid() = auth_id)
 WITH CHECK (auth.uid() = auth_id);
 
--- ============================================
--- PERMITIR QUE LOS USUARIOS VEAN PERFILES
--- ============================================
-DROP POLICY IF EXISTS "Users can view all profiles" ON users;
+-- Permitir que todos vean perfiles
 CREATE POLICY "Users can view all profiles"
 ON users FOR SELECT
 USING (true);
@@ -73,18 +80,18 @@ USING (true);
 DROP POLICY IF EXISTS "Users can create posts" ON posts;
 CREATE POLICY "Users can create posts"
 ON posts FOR INSERT
-WITH CHECK (auth.uid() = user_id);
+WITH CHECK (user_id = public.get_current_user_id());
 
 DROP POLICY IF EXISTS "Users can update their own posts" ON posts;
 CREATE POLICY "Users can update their own posts"
 ON posts FOR UPDATE
-USING (auth.uid() = user_id)
-WITH CHECK (auth.uid() = user_id);
+USING (user_id = public.get_current_user_id())
+WITH CHECK (user_id = public.get_current_user_id());
 
 DROP POLICY IF EXISTS "Users can delete their own posts" ON posts;
 CREATE POLICY "Users can delete their own posts"
 ON posts FOR DELETE
-USING (auth.uid() = user_id);
+USING (user_id = public.get_current_user_id());
 
 -- Likes
 DROP POLICY IF EXISTS "Anyone can view likes" ON likes;
@@ -95,25 +102,25 @@ USING (true);
 DROP POLICY IF EXISTS "Users can create likes" ON likes;
 CREATE POLICY "Users can create likes"
 ON likes FOR INSERT
-WITH CHECK (auth.uid() = user_id);
+WITH CHECK (user_id = public.get_current_user_id());
 
 DROP POLICY IF EXISTS "Users can delete their own likes" ON likes;
 CREATE POLICY "Users can delete their own likes"
 ON likes FOR DELETE
-USING (auth.uid() = user_id);
+USING (user_id = public.get_current_user_id());
 
 -- Mensajes
 DROP POLICY IF EXISTS "Users can view their messages" ON messages;
 CREATE POLICY "Users can view their messages"
 ON messages FOR SELECT
-USING (auth.uid() = sender_id OR auth.uid() = recipient_id);
+USING (auth.uid() = (SELECT auth_id FROM public.users WHERE id = sender_id) OR auth.uid() = (SELECT auth_id FROM public.users WHERE id = recipient_id));
 
 DROP POLICY IF EXISTS "Users can create messages" ON messages;
 CREATE POLICY "Users can create messages"
 ON messages FOR INSERT
-WITH CHECK (auth.uid() = sender_id);
+WITH CHECK (sender_id = public.get_current_user_id());
 
 DROP POLICY IF EXISTS "Users can update message read status" ON messages;
 CREATE POLICY "Users can update message read status"
 ON messages FOR UPDATE
-USING (auth.uid() = recipient_id);
+USING (recipient_id = public.get_current_user_id());
