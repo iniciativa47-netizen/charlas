@@ -5,14 +5,26 @@
 -- Crear función que se dispara al registrarse
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  v_username TEXT;
+  v_display_name TEXT;
 BEGIN
+  -- Intenta obtener username y display_name de metadata
+  v_username := new.raw_user_meta_data->>'username';
+  v_display_name := new.raw_user_meta_data->>'display_name';
+  
+  -- Si no existen, usa el email como fallback
+  IF v_username IS NULL OR v_username = '' THEN
+    v_username := SPLIT_PART(new.email, '@', 1);
+  END IF;
+  
+  IF v_display_name IS NULL OR v_display_name = '' THEN
+    v_display_name := SPLIT_PART(new.email, '@', 1);
+  END IF;
+  
   INSERT INTO public.users (auth_id, email, username, display_name)
-  VALUES (
-    new.id,
-    new.email,
-    COALESCE(new.raw_user_meta_data->>'username', SPLIT_PART(new.email, '@', 1)),
-    COALESCE(new.raw_user_meta_data->>'display_name', SPLIT_PART(new.email, '@', 1))
-  );
+  VALUES (new.id, new.email, v_username, v_display_name);
+  
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;

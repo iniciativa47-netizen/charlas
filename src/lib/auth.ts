@@ -2,7 +2,6 @@ import { supabase } from './supabase'
 
 export async function signUp(email: string, password: string, displayName: string, username: string) {
   try {
-    // Sign up with auth - el trigger automáticamente crea el usuario en la tabla users
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,

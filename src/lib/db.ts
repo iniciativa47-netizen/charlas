@@ -38,9 +38,12 @@ export async function getPosts(limit = 20, offset = 0) {
   const { data, error } = await supabase
     .from('posts')
     .select(`
-      *,
-      users:user_id(id, username, display_name, avatar_url),
-      likes(count)
+      id,
+      content,
+      created_at,
+      user_id,
+      image_url,
+      users(id, username, display_name, avatar_url)
     `)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
@@ -51,9 +54,12 @@ export async function getUserPosts(userId: string, limit = 20) {
   const { data, error } = await supabase
     .from('posts')
     .select(`
-      *,
-      users:user_id(id, username, display_name, avatar_url),
-      likes(count)
+      id,
+      content,
+      created_at,
+      user_id,
+      image_url,
+      users(id, username, display_name, avatar_url)
     `)
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
@@ -65,7 +71,14 @@ export async function createPost(userId: string, content: string, imageUrl?: str
   const { data, error } = await supabase
     .from('posts')
     .insert([{ user_id: userId, content, image_url: imageUrl }])
-    .select()
+    .select(`
+      id,
+      content,
+      created_at,
+      user_id,
+      image_url,
+      users(id, username, display_name, avatar_url)
+    `)
     .single()
   return { data, error }
 }
