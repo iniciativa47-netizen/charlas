@@ -10,12 +10,12 @@ BEGIN
   VALUES (
     new.id,
     new.email,
-    SPLIT_PART(new.email, '@', 1),
-    SPLIT_PART(new.email, '@', 1)
+    COALESCE(new.raw_user_meta_data->>'username', SPLIT_PART(new.email, '@', 1)),
+    COALESCE(new.raw_user_meta_data->>'display_name', SPLIT_PART(new.email, '@', 1))
   );
   RETURN new;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Crear trigger que ejecuta la función
 CREATE OR REPLACE TRIGGER on_auth_user_created

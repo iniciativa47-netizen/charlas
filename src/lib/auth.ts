@@ -2,32 +2,20 @@ import { supabase } from './supabase'
 
 export async function signUp(email: string, password: string, displayName: string, username: string) {
   try {
-    // Sign up with auth
+    // Sign up with auth - el trigger automáticamente crea el usuario en la tabla users
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          display_name: displayName,
+          username: username,
+        }
+      }
     })
 
     if (signUpError) {
       return { data: null, error: signUpError }
-    }
-
-    // Create user profile
-    if (authData.user) {
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .insert([
-          {
-            auth_id: authData.user.id,
-            email,
-            username,
-            display_name: displayName,
-          },
-        ])
-        .select()
-        .single()
-
-      return { data: userData, error: userError }
     }
 
     return { data: authData, error: null }
