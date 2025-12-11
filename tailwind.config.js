@@ -3,9 +3,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#2563eb',
-        secondary: '#f59e0b',
-        accent: '#8b5cf6',
+        charlas: {
+          primary: '#4796c4',
+          secondary: '#193d6d',
+          light: '#f0f7ff',
+          dark: '#0a2238',
+        },
       },
     },
   },

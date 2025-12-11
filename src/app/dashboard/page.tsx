@@ -1,98 +1,91 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { signOut, getUser } from '@/lib/auth'
+import { getPosts, createPost, likePost, unlikePost, hasUserLikedPost, getUserFriends, getConversation, sendMessage } from '@/lib/db'
 
 interface Post {
-  id: number
-  author: string
-  avatar: string
+  id: string
   content: string
-  timestamp: string
-  likes: number
-  liked: boolean
+  created_at: string
+  users: { username: string; display_name: string; avatar_url: string }
+  likes: Array<any>
 }
 
 interface Message {
-  id: number
-  sender: string
-  avatar: string
-  text: string
-  timestamp: string
+  id: string
+  content: string
+  sender_id: string
+  created_at: string
 }
-
-const DEMO_POSTS: Post[] = [
-  {
-    id: 1,
-    author: 'Juan Pérez',
-    avatar: '👨',
-    content: '¡Hola a todos! Bienvenidos a Charlas, nuestra nueva red social.',
-    timestamp: 'Hace 2 horas',
-    likes: 15,
-    liked: false,
-  },
-  {
-    id: 2,
-    author: 'María García',
-    avatar: '👩',
-    content: 'Me encanta esta plataforma, es muy intuitiva y fácil de usar.',
-    timestamp: 'Hace 1 hora',
-    likes: 8,
-    liked: false,
-  },
-  {
-    id: 3,
-    author: 'Carlos López',
-    avatar: '👨',
-    content: 'Compartiendo una foto hermosa del atardecer 🌅',
-    timestamp: 'Hace 30 minutos',
-    likes: 23,
-    liked: false,
-  },
-]
-
-const DEMO_MESSAGES: Message[] = [
-  {
-    id: 1,
-    sender: 'Juan Pérez',
-    avatar: '👨',
-    text: '¡Hola! ¿Cómo estás?',
-    timestamp: '10:30',
-  },
-  {
-    id: 2,
-    sender: 'Yo',
-    avatar: '😊',
-    text: 'Bien, gracias. ¿Y tú?',
-    timestamp: '10:31',
-  },
-]
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('feed')
-  const [posts, setPosts] = useState(DEMO_POSTS)
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [posts, setPosts] = useState<Post[]>([])
   const [newPost, setNewPost] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [friends, setFriends] = useState([])
+  const [messages, setMessages] = useState<Message[]>([])
 
-  const handleLike = (id: number) => {
-    setPosts(posts.map(post => 
-      post.id === id ? { ...post, liked: !post.liked, likes: post.liked ? post.likes - 1 : post.likes + 1 } : post
-    ))
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const { data: userData } = await getUser()
+        if (userData.user) {
+          setCurrentUser(userData.user)
+          const { data: postsData } = await getPosts(20)
+          setPosts(postsData || [])
+          const { data: friendsData } = await getUserFriends(userData.user.id)
+          setFriends(friendsData || [])
+        }
+      } catch (err) {
+        console.error('Error loading data:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [])
+
+  const handlePostSubmit = async () => {
+    if (newPost.trim() && currentUser) {
+      try {
+        const { data } = await createPost(currentUser.id, newPost)
+        if (data) {
+          setNewPost('')
+          const { data: updatedPosts } = await getPosts(20)
+          setPosts(updatedPosts || [])
+        }
+      } catch (err) {
+        console.error('Error creating post:', err)
+      }
+    }
   }
 
-  const handlePostSubmit = () => {
-    if (newPost.trim()) {
-      const post: Post = {
-        id: posts.length + 1,
-        author: 'Mi Perfil',
-        avatar: '👤',
-        content: newPost,
-        timestamp: 'Ahora',
-        likes: 0,
-        liked: false,
+  const handleLike = async (postId: string, isLiked: boolean) => {
+    if (!currentUser) return
+    try {
+      if (isLiked) {
+        await unlikePost(currentUser.id, postId)
+      } else {
+        await likePost(currentUser.id, postId)
       }
-      setPosts([post, ...posts])
-      setNewPost('')
+      const { data: updatedPosts } = await getPosts(20)
+      setPosts(updatedPosts || [])
+    } catch (err) {
+      console.error('Error liking post:', err)
     }
+  }
+
+  const handleLogout = async () => {
+    await signOut()
+    window.location.href = '/'
+  }
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Cargando...</div>
   }
 
   return (
@@ -100,14 +93,16 @@ export default function Dashboard() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-            Charlas
-          </h1>
+          <div className="text-2xl font-bold">
+            <span className="text-[#4796c4]">CHAR</span>
+            <span className="text-[#193d6d]">L</span>
+            <span className="text-[#4796c4]">AS</span>
+          </div>
           <div className="flex gap-4">
             <button className="text-gray-600 hover:text-gray-900">🔔</button>
-            <Link href="/" className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+            <button onClick={handleLogout} className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
               Salir
-            </Link>
+            </button>
           </div>
         </div>
       </header>
@@ -118,25 +113,25 @@ export default function Dashboard() {
           <nav className="bg-white rounded-lg p-4 space-y-2">
             <button
               onClick={() => setActiveTab('feed')}
-              className={`w-full text-left px-4 py-2 rounded-lg ${activeTab === 'feed' ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
+              className={`w-full text-left px-4 py-2 rounded-lg ${activeTab === 'feed' ? 'bg-blue-100 text-[#4796c4]' : 'hover:bg-gray-100'}`}
             >
               📱 Feed
             </button>
             <button
               onClick={() => setActiveTab('friends')}
-              className={`w-full text-left px-4 py-2 rounded-lg ${activeTab === 'friends' ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
+              className={`w-full text-left px-4 py-2 rounded-lg ${activeTab === 'friends' ? 'bg-blue-100 text-[#4796c4]' : 'hover:bg-gray-100'}`}
             >
               👥 Amigos
             </button>
             <button
               onClick={() => setActiveTab('messages')}
-              className={`w-full text-left px-4 py-2 rounded-lg ${activeTab === 'messages' ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
+              className={`w-full text-left px-4 py-2 rounded-lg ${activeTab === 'messages' ? 'bg-blue-100 text-[#4796c4]' : 'hover:bg-gray-100'}`}
             >
               💬 Mensajes
             </button>
             <button
               onClick={() => setActiveTab('profile')}
-              className={`w-full text-left px-4 py-2 rounded-lg ${activeTab === 'profile' ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
+              className={`w-full text-left px-4 py-2 rounded-lg ${activeTab === 'profile' ? 'bg-blue-100 text-[#4796c4]' : 'hover:bg-gray-100'}`}
             >
               👤 Perfil
             </button>
@@ -153,77 +148,70 @@ export default function Dashboard() {
                   value={newPost}
                   onChange={(e) => setNewPost(e.target.value)}
                   placeholder="¿Qué estás pensando?"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4796c4] resize-none"
                   rows={3}
                 />
                 <button
                   onClick={handlePostSubmit}
-                  className="mt-2 w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700"
+                  className="mt-2 w-full bg-gradient-to-r from-[#4796c4] to-[#193d6d] text-white py-2 rounded-lg font-semibold hover:shadow-lg"
                 >
                   Publicar
                 </button>
               </div>
 
               {/* Posts */}
-              {posts.map(post => (
-                <div key={post.id} className="bg-white rounded-lg p-4 shadow">
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="text-3xl">{post.avatar}</span>
-                    <div>
-                      <h3 className="font-semibold">{post.author}</h3>
-                      <p className="text-sm text-gray-500">{post.timestamp}</p>
-                    </div>
-                  </div>
-                  <p className="text-gray-800 mb-3">{post.content}</p>
-                  <button
-                    onClick={() => handleLike(post.id)}
-                    className={`flex items-center gap-2 ${post.liked ? 'text-red-500' : 'text-gray-500'} hover:text-red-500`}
-                  >
-                    {post.liked ? '❤️' : '🤍'} {post.likes}
-                  </button>
+              {posts.length === 0 ? (
+                <div className="bg-white rounded-lg p-4 shadow text-center text-gray-500">
+                  No hay posts aún. ¡Sé el primero!
                 </div>
-              ))}
+              ) : (
+                posts.map(post => (
+                  <div key={post.id} className="bg-white rounded-lg p-4 shadow">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-3xl">👤</span>
+                      <div>
+                        <h3 className="font-semibold">{post.users?.display_name || 'Usuario'}</h3>
+                        <p className="text-sm text-gray-500">{new Date(post.created_at).toLocaleString()}</p>
+                      </div>
+                    </div>
+                    <p className="text-gray-800 mb-3">{post.content}</p>
+                    <button className="flex items-center gap-2 text-gray-500 hover:text-[#4796c4]">
+                      ❤️ {post.likes?.length || 0}
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           )}
 
           {activeTab === 'friends' && (
             <div className="bg-white rounded-lg p-6 shadow space-y-4">
               <h2 className="text-xl font-bold">Mis Amigos</h2>
-              <div className="space-y-3">
-                {['Juan Pérez', 'María García', 'Carlos López'].map((friend, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">👤</span>
-                      <span className="font-semibold">{friend}</span>
+              {friends.length === 0 ? (
+                <p className="text-gray-500">No tienes amigos aún</p>
+              ) : (
+                <div className="space-y-3">
+                  {friends.map((friend: any, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">👤</span>
+                        <span className="font-semibold">{friend.users1?.display_name || friend.users2?.display_name}</span>
+                      </div>
+                      <button className="text-[#4796c4] hover:underline text-sm">Ver perfil</button>
                     </div>
-                    <button className="text-blue-600 hover:underline">Ver perfil</button>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
           {activeTab === 'messages' && (
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="p-4 border-b border-gray-200">
-                <h2 className="text-xl font-bold">Conversación con Juan Pérez</h2>
+                <h2 className="text-xl font-bold">Mensajes</h2>
               </div>
-              <div className="h-96 overflow-y-auto p-4 space-y-4 bg-gray-50">
-                {DEMO_MESSAGES.map(msg => (
-                  <div key={msg.id} className={`flex ${msg.sender === 'Yo' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-xs p-3 rounded-lg ${msg.sender === 'Yo' ? 'bg-blue-500 text-white' : 'bg-white border border-gray-200'}`}>
-                      <p>{msg.text}</p>
-                      <p className="text-xs mt-1 opacity-70">{msg.timestamp}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="p-4 border-t border-gray-200">
-                <input
-                  type="text"
-                  placeholder="Escribe un mensaje..."
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="p-4 text-center text-gray-500">
+                Selecciona un amigo para iniciar una conversación
               </div>
             </div>
           )}
@@ -234,11 +222,11 @@ export default function Dashboard() {
                 <span className="text-6xl">👤</span>
                 <div>
                   <h2 className="text-2xl font-bold">Mi Perfil</h2>
-                  <p className="text-gray-600">@miusuario</p>
+                  <p className="text-gray-600">@{currentUser?.email?.split('@')[0]}</p>
                 </div>
               </div>
-              <p className="text-gray-700 mb-4">Esta es mi biografía en Charlas</p>
-              <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+              <p className="text-gray-700 mb-4">Este es mi perfil en Charlas</p>
+              <button className="px-6 py-2 bg-gradient-to-r from-[#4796c4] to-[#193d6d] text-white rounded-lg hover:shadow-lg">
                 Editar Perfil
               </button>
             </div>
@@ -253,7 +241,7 @@ export default function Dashboard() {
               {['Ana Martínez', 'Lucas Torres', 'Sofia Rivera'].map((name, idx) => (
                 <div key={idx} className="flex items-center justify-between">
                   <span className="font-semibold text-sm">{name}</span>
-                  <button className="text-blue-600 text-xs hover:underline">Seguir</button>
+                  <button className="text-[#4796c4] text-xs hover:underline">Seguir</button>
                 </div>
               ))}
             </div>
