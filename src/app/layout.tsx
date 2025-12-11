@@ -4,6 +4,9 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Charlas - Red Social',
   description: 'Conecta con amigos y comparte tus pensamientos',
+  icons: {
+    icon: '/logos/logo-favicon.png',
+  },
 }
 
 export default function RootLayout({

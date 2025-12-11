@@ -93,11 +93,11 @@ export default function Dashboard() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-          <div className="text-2xl font-bold">
-            <span className="text-[#4796c4]">CHAR</span>
-            <span className="text-[#193d6d]">L</span>
-            <span className="text-[#4796c4]">AS</span>
-          </div>
+          <img 
+            src="/logos/logo-horizontal-lightmode.png" 
+            alt="Charlas" 
+            className="h-12"
+          />
           <div className="flex gap-4">
             <button className="text-gray-600 hover:text-gray-900">🔔</button>
             <button onClick={handleLogout} className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">

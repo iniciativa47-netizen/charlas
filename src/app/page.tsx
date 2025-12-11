@@ -56,11 +56,11 @@ export default function Home() {
       <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="text-5xl font-bold mb-2">
-            <span className="text-[#4796c4]">CHAR</span>
-            <span className="text-[#193d6d]">L</span>
-            <span className="text-[#4796c4]">AS</span>
-          </div>
+          <img 
+            src="/logos/logo-horizontal-lightmode.png" 
+            alt="Charlas" 
+            className="h-16 mx-auto mb-2"
+          />
           <p className="text-gray-600 mt-2">Conecta con tus amigos</p>
         </div>
 
