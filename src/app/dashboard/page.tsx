@@ -10,8 +10,8 @@ interface Post {
   content: string
   created_at: string
   user_id: string
-  image_url?: string
-  users: { id: string; username: string; display_name: string; avatar_url?: string }
+  image_url?: string | null
+  users?: { id: string; username: string; display_name: string; avatar_url?: string | null }[] | null
 }
 
 interface Message {
@@ -175,10 +175,10 @@ export default function Dashboard() {
                   <div key={post.id} className="bg-white rounded-lg p-4 shadow">
                     <div className="flex items-center gap-3 mb-3">
                     <div className="w-12 h-12 bg-[#4796c4] rounded-full flex items-center justify-center text-white font-bold">
-                      {post.users?.display_name?.charAt(0).toUpperCase()}
+                      {post.users?.[0]?.display_name?.charAt(0).toUpperCase()}
                     </div>
                       <div>
-                        <h3 className="font-semibold">{post.users?.display_name || 'Usuario'}</h3>
+                        <h3 className="font-semibold">{post.users?.[0]?.display_name || 'Usuario'}</h3>
                         <p className="text-sm text-gray-500">{new Date(post.created_at).toLocaleString()}</p>
                       </div>
                     </div>

@@ -43,7 +43,7 @@ export async function getPosts(limit = 20, offset = 0) {
       created_at,
       user_id,
       image_url,
-      users(id, username, display_name, avatar_url)
+      users!user_id(id, username, display_name, avatar_url)
     `)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
@@ -59,7 +59,7 @@ export async function getUserPosts(userId: string, limit = 20) {
       created_at,
       user_id,
       image_url,
-      users(id, username, display_name, avatar_url)
+      users!user_id(id, username, display_name, avatar_url)
     `)
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
@@ -77,7 +77,7 @@ export async function createPost(userId: string, content: string, imageUrl?: str
       created_at,
       user_id,
       image_url,
-      users(id, username, display_name, avatar_url)
+      users!user_id(id, username, display_name, avatar_url)
     `)
     .single()
   return { data, error }
