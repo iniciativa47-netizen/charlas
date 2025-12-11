@@ -1,8 +1,24 @@
 # Configuración de Base de Datos Supabase
 
-## 📋 Pasos para Configurar
+## ⚠️ URGENTE: EJECUTAR FIX RLS AHORA
 
-### 1. Ejecutar SQL en Supabase
+Si los posts no se crean/cargan, necesitas ejecutar el `fix-rls.sql`:
+
+### Pasos rápidos:
+
+1. Ve a https://app.supabase.com/ > proyecto **charlas**
+2. **SQL Editor** > **New Query**
+3. Copia TODO el contenido de `fix-rls.sql` del repositorio
+4. Pégalo y haz click **Run**
+5. ¡Listo! Ahora puedes crear posts
+
+**Nota:** Si creaste usuarios antes de ejecutar esto, bórralos en **Authentication > Users** y crea uno nuevo.
+
+---
+
+## 📋 Pasos Completos de Configuración Inicial
+
+### 1. Ejecutar SQL Schema en Supabase
 
 1. Ve a tu dashboard de Supabase: https://app.supabase.com
 2. Selecciona tu proyecto "charlas"
@@ -18,7 +34,21 @@ Esto creará todas las tablas necesarias:
 - `friendships` - Relaciones de amistad
 - `messages` - Mensajes directos
 
-### 2. Insertar Datos Demo (Opcional)
+### 2. Ejecutar Fix RLS (Políticas de Seguridad)
+
+Este es el paso que probablemente te falta si el feed no funciona:
+
+1. Ve a **SQL Editor**
+2. Crea una nueva query
+3. Copia el contenido de `fix-rls.sql`
+4. Ejecuta la query
+
+Esto configura:
+- ✅ Trigger auto-creación de perfiles en registro
+- ✅ Función `get_current_user_id()` para traducir auth.uid() a users.id
+- ✅ Políticas RLS correctas para posts, likes, mensajes
+
+### 3. Insertar Datos Demo (Opcional)
 
 Si quieres cargar datos ficticios para probar:
 
@@ -28,14 +58,6 @@ Si quieres cargar datos ficticios para probar:
 4. Ejecuta la query
 
 Esto creará 6 usuarios demo con posts, amistades y mensajes.
-
-### 3. Configurar Políticas RLS (Row Level Security)
-
-Las políticas de seguridad ya están incluidas en `database.sql`:
-- Los usuarios pueden ver todos los perfiles
-- Los usuarios solo pueden editar su propio perfil
-- Los posts son públicos pero solo el autor puede editarlos
-- Los amigos solo pueden ver mensajes entre ellos
 
 ### 4. Habilitar Autenticación por Email
 
