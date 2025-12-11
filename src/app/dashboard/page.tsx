@@ -9,8 +9,9 @@ interface Post {
   id: string
   content: string
   created_at: string
-  users: { username: string; display_name: string; avatar_url: string }
-  likes: Array<any>
+  user_id: string
+  image_url?: string
+  users: { id: string; username: string; display_name: string; avatar_url?: string }
 }
 
 interface Message {
@@ -182,8 +183,11 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <p className="text-gray-800 mb-3">{post.content}</p>
-                    <button className="flex items-center gap-2 text-gray-500 hover:text-red-500 transition">
-                      Favorito {post.likes?.length || 0}
+                    <button 
+                      onClick={() => handleLike(post.id, false)}
+                      className="flex items-center gap-2 text-gray-500 hover:text-red-500 transition"
+                    >
+                      Favorito
                     </button>
                   </div>
                 ))

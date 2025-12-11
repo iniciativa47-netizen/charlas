@@ -38,7 +38,8 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
 -- ACTUALIZAR POLÍTICAS RLS PARA PERMITIR INSERT
 -- ============================================
 
--- Eliminar la política antigua
+-- Eliminar las políticas antiguas
+DROP POLICY IF EXISTS "Users can insert their own profile" ON users;
 DROP POLICY IF EXISTS "Users can update their own profile" ON users;
 
 -- Nueva política que permite insert a usuarios autenticados
